@@ -1,0 +1,21 @@
+[package]
+name = "mourse"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+enigo = "*"
+device_query = "*"
+eframe = { version = "*", features = ["glow"] }
+rand = "*"
+serde = { version = "*", features = ["derive"] }
+ron = "*"
+image = { version = "*", features = ["png"] }
+
+[build-dependencies]
+winres = "*"
+
+[profile.release]
+strip = true
+lto = "thin"
+panic = "abort"
