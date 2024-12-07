@@ -1,10 +1,10 @@
-use enigo::{Enigo, Settings, Mouse, Coordinate};
+use enigo::{Coordinate, Enigo, Mouse, Settings};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use rand::Rng;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MouseMoverConfig {
@@ -68,7 +68,8 @@ impl MouseMover {
                     move_count.fetch_add(1, Ordering::SeqCst);
 
                     let delay = if config.random_delay_enabled {
-                        config.move_interval_ms + rng.gen_range(config.random_delay_min_ms..=config.random_delay_max_ms)
+                        config.move_interval_ms
+                            + rng.gen_range(config.random_delay_min_ms..=config.random_delay_max_ms)
                     } else {
                         config.move_interval_ms
                     };
@@ -112,7 +113,10 @@ impl MouseMover {
     }
 
     pub fn get_random_delay_range(&self) -> (u64, u64) {
-        (self.config.random_delay_min_ms, self.config.random_delay_max_ms)
+        (
+            self.config.random_delay_min_ms,
+            self.config.random_delay_max_ms,
+        )
     }
 
     pub fn set_random_delay_range(&mut self, min: u64, max: u64) {

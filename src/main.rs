@@ -5,12 +5,15 @@ mod mouse_button;
 mod mouse_mover;
 
 use app::MourseApp;
-use eframe::egui::{ViewportBuilder, IconData};
+use eframe::egui::{IconData, ViewportBuilder};
 use std::sync::Arc;
 
 fn load_icon() -> Arc<IconData> {
     let image_bytes = include_bytes!("../assets/icon.png");
-    let image = image::load_from_memory(image_bytes).unwrap().resize(16, 16, image::imageops::FilterType::Nearest).into_rgba8();
+    let image = image::load_from_memory(image_bytes)
+        .unwrap()
+        .resize(16, 16, image::imageops::FilterType::Nearest)
+        .into_rgba8();
     Arc::new(IconData {
         rgba: image.to_vec(),
         width: 16,

@@ -3,11 +3,11 @@ use crate::mouse_button::SerializableMouseButton;
 use crate::mouse_mover::MouseMover;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use eframe::egui;
-use std::time::Duration;
+use std::env;
 use std::fs;
 use std::path::PathBuf;
-use std::env;
 use std::process::Command;
+use std::time::Duration;
 
 #[derive(Debug)]
 pub struct MourseApp {
@@ -28,14 +28,10 @@ impl MourseApp {
     }
 
     fn save_config(&self) {
-        let config = (
-            self.clicker.get_config(),
-            self.mouse_mover.get_config()
-        );
-        if let Ok(config_str) = ron::ser::to_string_pretty(
-            &config,
-            ron::ser::PrettyConfig::default(),
-        ) {
+        let config = (self.clicker.get_config(), self.mouse_mover.get_config());
+        if let Ok(config_str) =
+            ron::ser::to_string_pretty(&config, ron::ser::PrettyConfig::default())
+        {
             if let Err(e) = fs::write(&self.config_path, config_str) {
                 eprintln!("Failed to save config: {}", e);
             }
@@ -55,24 +51,15 @@ impl MourseApp {
         if self.config_path.exists() {
             #[cfg(target_os = "windows")]
             {
-                Command::new("notepad")
-                    .arg(&self.config_path)
-                    .spawn()
-                    .ok();
+                Command::new("notepad").arg(&self.config_path).spawn().ok();
             }
             #[cfg(target_os = "macos")]
             {
-                Command::new("open")
-                    .arg(&self.config_path)
-                    .spawn()
-                    .ok();
+                Command::new("open").arg(&self.config_path).spawn().ok();
             }
             #[cfg(target_os = "linux")]
             {
-                Command::new("xdg-open")
-                    .arg(&self.config_path)
-                    .spawn()
-                    .ok();
+                Command::new("xdg-open").arg(&self.config_path).spawn().ok();
             }
         } else {
             self.save_config();
@@ -100,7 +87,7 @@ impl eframe::App for MourseApp {
         // Check for hotkeys with debouncing
         let keys: Vec<Keycode> = self.device_state.get_keys();
         let now = std::time::Instant::now();
-        
+
         if keys.contains(&Keycode::F6) {
             if now.duration_since(self.last_key_press) > Duration::from_millis(200) {
                 if self.clicker.is_clicking() {
@@ -142,7 +129,7 @@ impl eframe::App for MourseApp {
                         ui.group(|ui| {
                             ui.set_width(250.0);
                             ui.heading("Auto Clicker");
-                            
+
                             ui.horizontal(|ui| {
                                 ui.label("Clicks:");
                                 ui.label(format!("{}", self.clicker.get_click_count()));
@@ -167,9 +154,21 @@ impl eframe::App for MourseApp {
                                 egui::ComboBox::from_label("")
                                     .selected_text(format!("{:?}", button))
                                     .show_ui(ui, |ui| {
-                                        ui.selectable_value(&mut button, SerializableMouseButton::Left, "Left");
-                                        ui.selectable_value(&mut button, SerializableMouseButton::Right, "Right");
-                                        ui.selectable_value(&mut button, SerializableMouseButton::Middle, "Middle");
+                                        ui.selectable_value(
+                                            &mut button,
+                                            SerializableMouseButton::Left,
+                                            "Left",
+                                        );
+                                        ui.selectable_value(
+                                            &mut button,
+                                            SerializableMouseButton::Right,
+                                            "Right",
+                                        );
+                                        ui.selectable_value(
+                                            &mut button,
+                                            SerializableMouseButton::Middle,
+                                            "Middle",
+                                        );
                                     });
                                 if button != self.clicker.get_mouse_button() {
                                     self.clicker.set_mouse_button(button);
@@ -177,7 +176,13 @@ impl eframe::App for MourseApp {
                                 }
                             });
 
-                            if ui.checkbox(&mut self.clicker.config.random_delay_enabled, "Random Interval").changed() {
+                            if ui
+                                .checkbox(
+                                    &mut self.clicker.config.random_delay_enabled,
+                                    "Random Interval",
+                                )
+                                .changed()
+                            {
                                 self.save_config();
                             }
 
@@ -186,15 +191,23 @@ impl eframe::App for MourseApp {
                                     ui.label("Extra Delay Range:");
                                     let (mut min, mut max) = self.clicker.get_random_delay_range();
                                     let mut changed = false;
-                                    changed |= ui.add(egui::DragValue::new(&mut min)
-                                        .speed(1.0)
-                                        .range(0..=1000)
-                                        .suffix(" ms")).changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(&mut min)
+                                                .speed(1.0)
+                                                .range(0..=1000)
+                                                .suffix(" ms"),
+                                        )
+                                        .changed();
                                     ui.label("to");
-                                    changed |= ui.add(egui::DragValue::new(&mut max)
-                                        .speed(1.0)
-                                        .range(min..=1000)
-                                        .suffix(" ms")).changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(&mut max)
+                                                .speed(1.0)
+                                                .range(min..=1000)
+                                                .suffix(" ms"),
+                                        )
+                                        .changed();
                                     if changed {
                                         self.clicker.set_random_delay_range(min, max);
                                         self.save_config();
@@ -202,7 +215,11 @@ impl eframe::App for MourseApp {
                                 });
                             }
 
-                            let clicking_text = if self.clicker.is_clicking() { "Stop Clicking (F6)" } else { "Start Clicking (F6)" };
+                            let clicking_text = if self.clicker.is_clicking() {
+                                "Stop Clicking (F6)"
+                            } else {
+                                "Start Clicking (F6)"
+                            };
                             if ui.button(clicking_text).clicked() {
                                 if self.clicker.is_clicking() {
                                     self.clicker.stop_clicking();
@@ -210,7 +227,6 @@ impl eframe::App for MourseApp {
                                     self.clicker.start_clicking();
                                 }
                             }
-
                         });
 
                         ui.add_space(5.0);
@@ -219,7 +235,7 @@ impl eframe::App for MourseApp {
                         ui.group(|ui| {
                             ui.set_width(250.0);
                             ui.heading("Random Mouse Mover");
-                            
+
                             ui.horizontal(|ui| {
                                 ui.label("Moves:");
                                 ui.label(format!("{}", self.mouse_mover.get_move_count()));
@@ -257,17 +273,26 @@ impl eframe::App for MourseApp {
                             if random_delay {
                                 ui.horizontal(|ui| {
                                     ui.label("Extra Delay Range:");
-                                    let (mut min, mut max) = self.mouse_mover.get_random_delay_range();
+                                    let (mut min, mut max) =
+                                        self.mouse_mover.get_random_delay_range();
                                     let mut changed = false;
-                                    changed |= ui.add(egui::DragValue::new(&mut min)
-                                        .speed(1.0)
-                                        .range(0..=500)
-                                        .suffix(" ms")).changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(&mut min)
+                                                .speed(1.0)
+                                                .range(0..=500)
+                                                .suffix(" ms"),
+                                        )
+                                        .changed();
                                     ui.label("to");
-                                    changed |= ui.add(egui::DragValue::new(&mut max)
-                                        .speed(1.0)
-                                        .range(min..=500)
-                                        .suffix(" ms")).changed();
+                                    changed |= ui
+                                        .add(
+                                            egui::DragValue::new(&mut max)
+                                                .speed(1.0)
+                                                .range(min..=500)
+                                                .suffix(" ms"),
+                                        )
+                                        .changed();
                                     if changed {
                                         self.mouse_mover.set_random_delay_range(min, max);
                                         self.save_config();
@@ -275,7 +300,11 @@ impl eframe::App for MourseApp {
                                 });
                             }
 
-                            let moving_text = if self.mouse_mover.is_moving() { "Stop Moving (F7)" } else { "Start Moving (F7)" };
+                            let moving_text = if self.mouse_mover.is_moving() {
+                                "Stop Moving (F7)"
+                            } else {
+                                "Start Moving (F7)"
+                            };
                             if ui.button(moving_text).clicked() {
                                 if self.mouse_mover.is_moving() {
                                     self.mouse_mover.stop_moving();

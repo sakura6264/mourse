@@ -1,5 +1,5 @@
-use enigo::{Enigo, Settings, Mouse};
 use crate::mouse_button::SerializableMouseButton;
+use enigo::{Enigo, Mouse, Settings};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -70,7 +70,8 @@ impl Clicker {
                     click_count.fetch_add(1, Ordering::SeqCst);
 
                     let delay = if config.random_delay_enabled {
-                        config.click_interval_ms + rng.gen_range(config.random_delay_min_ms..=config.random_delay_max_ms)
+                        config.click_interval_ms
+                            + rng.gen_range(config.random_delay_min_ms..=config.random_delay_max_ms)
                     } else {
                         config.click_interval_ms
                     };
@@ -124,7 +125,10 @@ impl Clicker {
     }
 
     pub fn get_random_delay_range(&self) -> (u64, u64) {
-        (self.config.random_delay_min_ms, self.config.random_delay_max_ms)
+        (
+            self.config.random_delay_min_ms,
+            self.config.random_delay_max_ms,
+        )
     }
 
     pub fn set_random_delay_range(&mut self, min: u64, max: u64) {
