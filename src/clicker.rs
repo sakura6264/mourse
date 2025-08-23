@@ -114,15 +114,6 @@ impl Clicker {
         self.config.mouse_button = button;
     }
 
-    #[allow(dead_code)]
-    pub fn is_random_delay(&self) -> bool {
-        self.config.random_delay_enabled
-    }
-
-    #[allow(dead_code)]
-    pub fn set_random_delay(&mut self, enabled: bool) {
-        self.config.random_delay_enabled = enabled;
-    }
 
     pub fn get_random_delay_range(&self) -> (u64, u64) {
         (

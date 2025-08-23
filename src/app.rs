@@ -3,6 +3,7 @@ use crate::mouse_button::SerializableMouseButton;
 use crate::mouse_mover::MouseMover;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use eframe::egui;
+use std::time::Instant;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -14,11 +15,12 @@ pub struct MourseApp {
     clicker: Clicker,
     mouse_mover: MouseMover,
     device_state: DeviceState,
-    last_key_press: std::time::Instant,
+    last_key_press: Instant,
     config_path: PathBuf,
 }
 
 impl MourseApp {
+    const DEBOUNCE_MS: u64 = 200;
     fn get_config_path() -> PathBuf {
         env::current_exe()
             .expect("Failed to get executable path")
@@ -48,22 +50,41 @@ impl MourseApp {
     }
 
     fn open_config_file(&self) {
-        if self.config_path.exists() {
-            #[cfg(target_os = "windows")]
-            {
-                Command::new("notepad").arg(&self.config_path).spawn().ok();
-            }
-            #[cfg(target_os = "macos")]
-            {
-                Command::new("open").arg(&self.config_path).spawn().ok();
-            }
-            #[cfg(target_os = "linux")]
-            {
-                Command::new("xdg-open").arg(&self.config_path).spawn().ok();
-            }
-        } else {
+        if !self.config_path.exists() {
             self.save_config();
-            self.open_config_file();
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            Command::new("notepad").arg(&self.config_path).spawn().ok();
+        }
+        #[cfg(target_os = "macos")]
+        {
+            Command::new("open").arg(&self.config_path).spawn().ok();
+        }
+        #[cfg(target_os = "linux")]
+        {
+            Command::new("xdg-open").arg(&self.config_path).spawn().ok();
+        }
+    }
+
+    fn handle_toggle(
+        &mut self,
+        pressed: bool,
+        is_active: bool,
+        mut start: impl FnMut(&mut Self),
+        mut stop: impl FnMut(&mut Self),
+    ) {
+        if pressed {
+            let now = Instant::now();
+            if now.duration_since(self.last_key_press) > Duration::from_millis(Self::DEBOUNCE_MS) {
+                if is_active {
+                    stop(self);
+                } else {
+                    start(self);
+                }
+                self.last_key_press = now;
+            }
         }
     }
 }
@@ -86,29 +107,21 @@ impl eframe::App for MourseApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Check for hotkeys with debouncing
         let keys: Vec<Keycode> = self.device_state.get_keys();
-        let now = std::time::Instant::now();
 
-        if keys.contains(&Keycode::F6) {
-            if now.duration_since(self.last_key_press) > Duration::from_millis(200) {
-                if self.clicker.is_clicking() {
-                    self.clicker.stop_clicking();
-                } else {
-                    self.clicker.start_clicking();
-                }
-                self.last_key_press = now;
-            }
-        }
+        // Debounced toggles
+        self.handle_toggle(
+            keys.contains(&Keycode::F6),
+            self.clicker.is_clicking(),
+            |s| s.clicker.start_clicking(),
+            |s| s.clicker.stop_clicking(),
+        );
 
-        if keys.contains(&Keycode::F7) {
-            if now.duration_since(self.last_key_press) > Duration::from_millis(200) {
-                if self.mouse_mover.is_moving() {
-                    self.mouse_mover.stop_moving();
-                } else {
-                    self.mouse_mover.start_moving();
-                }
-                self.last_key_press = now;
-            }
-        }
+        self.handle_toggle(
+            keys.contains(&Keycode::F7),
+            self.mouse_mover.is_moving(),
+            |s| s.mouse_mover.start_moving(),
+            |s| s.mouse_mover.stop_moving(),
+        );
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical(|ui| {
