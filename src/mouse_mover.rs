@@ -59,17 +59,19 @@ impl MouseMover {
             thread::spawn(move || {
                 let settings = Settings::default();
                 let mut enigo = Enigo::new(&settings).expect("Failed to create Enigo instance");
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 while is_moving.load(Ordering::SeqCst) {
-                    let dx = rng.gen_range(-config.max_distance..=config.max_distance);
-                    let dy = rng.gen_range(-config.max_distance..=config.max_distance);
+                    let dx = rng.random_range(-config.max_distance..=config.max_distance);
+                    let dy = rng.random_range(-config.max_distance..=config.max_distance);
                     let _ = enigo.move_mouse(dx, dy, Coordinate::Rel);
                     move_count.fetch_add(1, Ordering::SeqCst);
 
                     let delay = if config.random_delay_enabled {
                         config.move_interval_ms
-                            + rng.gen_range(config.random_delay_min_ms..=config.random_delay_max_ms)
+                            + rng.random_range(
+                                config.random_delay_min_ms..=config.random_delay_max_ms,
+                            )
                     } else {
                         config.move_interval_ms
                     };

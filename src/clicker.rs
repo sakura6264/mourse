@@ -60,7 +60,7 @@ impl Clicker {
             thread::spawn(move || {
                 let settings = Settings::default();
                 let mut enigo = Enigo::new(&settings).expect("Failed to create Enigo instance");
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
 
                 while is_clicking.load(Ordering::SeqCst) {
                     let mouse_button = config.mouse_button;
@@ -71,7 +71,9 @@ impl Clicker {
 
                     let delay = if config.random_delay_enabled {
                         config.click_interval_ms
-                            + rng.gen_range(config.random_delay_min_ms..=config.random_delay_max_ms)
+                            + rng.random_range(
+                                config.random_delay_min_ms..=config.random_delay_max_ms,
+                            )
                     } else {
                         config.click_interval_ms
                     };
@@ -113,7 +115,6 @@ impl Clicker {
     pub fn set_mouse_button(&mut self, button: SerializableMouseButton) {
         self.config.mouse_button = button;
     }
-
 
     pub fn get_random_delay_range(&self) -> (u64, u64) {
         (

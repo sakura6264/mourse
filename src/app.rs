@@ -3,12 +3,12 @@ use crate::mouse_button::SerializableMouseButton;
 use crate::mouse_mover::MouseMover;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use eframe::egui;
-use std::time::Instant;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 use std::time::Duration;
+use std::time::Instant;
 
 #[derive(Debug)]
 pub struct MourseApp {
